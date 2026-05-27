@@ -213,15 +213,21 @@ install_os_packages() {
   if is_ubuntu; then
     run_quiet "Installing prerequisites for Chromium PPA" \
       env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq software-properties-common ca-certificates 2>/dev/null || true
+    # ИСПРАВЛЕНО: Явно передаем -y и подавляем весь вывод
     run_quiet "Adding xtradeb/apps PPA" \
-      add-apt-repository -y ppa:xtradeb/apps -qq 2>/dev/null || true
+      add-apt-repository -y ppa:xtradeb/apps > /dev/null 2>&1 || true
     run_quiet "Updating after PPA" apt-get update -qq
   fi
   
   local icu_pkg=$(pick_libicu_package)
-  run_quiet "Installing system packages" \
+  # ИСПРАВЛЕНО: Раздельная установка для надежности
+  run_quiet "Installing core system packages" \
     env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends -qq \
-      ca-certificates curl chromium fontconfig libnspr4 unzip "$icu_pkg"
+      ca-certificates curl fontconfig libnspr4 unzip "$icu_pkg"
+
+  run_quiet "Installing Chromium browser" \
+    env DEBIAN_FRONTEND=noninteractive apt-get install -y chromium -qq || true
+
   apt-get clean -qq; rm -rf /var/lib/apt/lists/*
 }
 
