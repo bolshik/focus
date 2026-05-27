@@ -3,8 +3,6 @@
 # Focus-TV Installer (based on Lampac NextGen)
 # Downloads release zip, creates system user, installs .NET 10 + OS deps,
 # registers systemd unit, and applies Focus-TV default config.
-# 
-# Repository: https://github.com/bolshik/focus
 #
 set -euo pipefail
 
