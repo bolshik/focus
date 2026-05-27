@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 #
 # Focus-TV Installer (based on Lampac NextGen)
-# Downloads release zip, creates system user, installs .NET 10 + OS deps,
-# registers systemd unit, and applies Focus-TV default config.
 #
 set -euo pipefail
+
+# Функция для очистки временных файлов (пустая, чтобы избежать ошибки)
+cleanup() {
+  :
+}
 
 readonly SCRIPT_NAME="${0##*/}"
 readonly INSTALL_ROOT="${LAMPAC_INSTALL_ROOT:-/opt/lampac}"
