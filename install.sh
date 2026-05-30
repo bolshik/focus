@@ -2,7 +2,7 @@
 #
 # Focus-TV Installer (based on Lampac NextGen)
 # Downloads release zip, creates system user, installs .NET 10 + OS deps,
-# registers systemd unit, and applies Focus-TV default config.
+# registers systemd unit, and applies Focus-TV default config WITH Sync.
 #
 set -euo pipefail
 
@@ -66,8 +66,6 @@ pick_libicu_package() {
 is_ubuntu() {
   [[ -r /etc/os-release ]] && { . /etc/os-release; [[ "${ID:-}" == "ubuntu" ]]; }
 }
-
-# ─── Install steps ───────────────────────────────────────────────────────────
 
 install_os_packages() {
   apt-get update -qq
@@ -142,11 +140,9 @@ EOF
 }
 
 configure_focus_tv() {
-  # Пароль администратора
   echo -n "Vfhifk1981@" | tee "${INSTALL_ROOT}/passwd" > /dev/null
   chown "${LAMPAC_USER}:${LAMPAC_USER}" "${INSTALL_ROOT}/passwd"
 
-  # Правильный init.conf
   cat > "${INSTALL_ROOT}/init.conf" << 'INITEOF'
 {
   "WebLog": {
@@ -155,8 +151,9 @@ configure_focus_tv() {
   },
   "BaseModule": {
     "SkipModules": [
-      "DLNA", "Catalog", "SyncEvents", "Storage",
-      "Tracks", "Transcoding", "WebLog", "TelegramAuth", "TelegramAuthBot"
+      "DLNA", "Catalog",
+      "Tracks", "Transcoding", "WebLog",
+      "TelegramAuth", "TelegramAuthBot"
     ],
     "LoadModules": [ "AdminPanel", ".*" ]
   },
@@ -194,7 +191,6 @@ configure_focus_tv() {
 INITEOF
   chown "${LAMPAC_USER}:${LAMPAC_USER}" "${INSTALL_ROOT}/init.conf"
 
-  # Создаем тестового пользователя
   cat > "${INSTALL_ROOT}/users.json" << 'USERSEOF'
 [
   {
@@ -210,16 +206,10 @@ INITEOF
 USERSEOF
   chown "${LAMPAC_USER}:${LAMPAC_USER}" "${INSTALL_ROOT}/users.json"
 
-  # Включаем AdminPanel
   mkdir -p "${INSTALL_ROOT}/mods"
   cp -r "${INSTALL_ROOT}/module/AdminPanel" "${INSTALL_ROOT}/mods/AdminPanel"
   sed -i 's/"enable": false/"enable": true/' "${INSTALL_ROOT}/mods/AdminPanel/manifest.json"
   chown -R "${LAMPAC_USER}:${LAMPAC_USER}" "${INSTALL_ROOT}/mods"
-
-  # Убираем суффикс -CUB из заголовков
-  if [[ -f "${INSTALL_ROOT}/wwwroot/lampa-main/app.min.js" ]]; then
-    sed -i "s/+ ' - ' + Storage.field('source').toUpperCase()//g" "${INSTALL_ROOT}/wwwroot/lampa-main/app.min.js"
-  fi
 }
 
 start_service() { systemctl start "$SERVICE_NAME"; }
@@ -234,8 +224,6 @@ print_success() {
   printf '  Config: %s/init.conf\n' "$INSTALL_ROOT"
   printf '  Logs:   journalctl -u %s -f\n\n' "$SERVICE_NAME"
 }
-
-# ─── Main ─────────────────────────────────────────────────────────────────────
 
 main() {
   if [[ ${EUID} -ne 0 ]]; then exec sudo -E "$0" "$@"; fi
