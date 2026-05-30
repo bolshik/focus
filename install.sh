@@ -155,7 +155,7 @@ configure_focus_tv() {
       "Tracks", "Transcoding", "WebLog",
       "TelegramAuth", "TelegramAuthBot"
     ],
-    "LoadModules": [ "AdminPanel", ".*" ]
+    "LoadModules": [ "AdminPanel", "Sync", "SyncEvents", "Storage", "TimeCode", ".*" ]
   },
   "AdminPanel": {
     "enable": true,
@@ -181,7 +181,8 @@ configure_focus_tv() {
       "timecode": true,
       "jacred": true,
       "tmdbProxy": true,
-      "cubProxy": true
+      "cubProxy": true,
+      "sync": true
     }
   },
   "listen": {
@@ -210,6 +211,11 @@ USERSEOF
   cp -r "${INSTALL_ROOT}/module/AdminPanel" "${INSTALL_ROOT}/mods/AdminPanel"
   sed -i 's/"enable": false/"enable": true/' "${INSTALL_ROOT}/mods/AdminPanel/manifest.json"
   chown -R "${LAMPAC_USER}:${LAMPAC_USER}" "${INSTALL_ROOT}/mods"
+
+  # Устанавливаем sqlite3 и инициализируем базу синхронизации
+  apt-get install -y -qq sqlite3 2>/dev/null || true
+  sleep 15
+  sqlite3 "${INSTALL_ROOT}/database/Sync.sql" "INSERT OR IGNORE INTO bookmarks (user, data, updated) VALUES ('112233', '{\"kinopoisk_id\": 0, \"title\": \"init\"}', datetime('now'));" 2>/dev/null || true
 }
 
 start_service() { systemctl start "$SERVICE_NAME"; }
